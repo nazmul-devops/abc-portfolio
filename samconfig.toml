@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "abc-portfolio-webapp"
+resolve_s3 = true
+s3_prefix = "abc-portfolio-webapp"
+region = "us-east-1"
+profile = "ayza"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "S3BucketName=\"abc-simple-portfolio-webapp\" DomainName=\"portfolio.abcfanbd.com\" CertificateArn=\"arn:aws:acm:ap-south-1:074418741057:certificate/3aedf07c-5ca3-48ea-8cd2-62ad6357e03a\""
+image_repositories = []

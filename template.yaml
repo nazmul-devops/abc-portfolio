@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: Name for the S3 bucket that will store the static web app content
+    Default: abc-simple-portfolio-webapp
+  DomainName:
+    Type: String
+    Description: Custom domain name for the static web app
+    Default: portfolio.abcfanbd.com
+  CertificateArn:
+    Type: String
+    Description: ARN of the SSL certificate for the custom domain
+    Default: arn:aws:acm:us-east-1:074418741057:certificate/9d783913-f958-4c13-bb7e-a4277e9dccfc
+
+Resources:
+  WebAppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+
+  WebAppOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: Origin Access Identity for the S3 bucket
+
+  WebAppBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebAppBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${WebAppBucket}/*"
+            Condition:
+              StringEquals:
+                "aws:SourceVpce": ""
+          - Sid: CloudFrontAccess
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${WebAppOriginAccessIdentity}"
+            Action: s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${WebAppBucket}/*"
+
+  WebAppDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - !Ref DomainName
+        Origins:
+          - DomainName: !GetAtt WebAppBucket.RegionalDomainName
+            Id: MyWebAppOrigin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${WebAppOriginAccessIdentity}"
+        Enabled: true
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: MyWebAppOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+        HttpVersion: http2
+
+Outputs:
+  WebsiteURL:
+    Description: URL of the deployed static web app
+    Value: !Sub "https://${WebAppDistribution.DomainName}"
