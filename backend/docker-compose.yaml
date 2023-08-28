@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  web:
+    # image: ipics/habib-inneed:latest
+    container_name: abc-demo-django-simple-webapp
+    build:
+      context: . #directory
+      dockerfile: Dockerfile #file name
+    restart: always
+    command: python3 manage.py runserver 0.0.0.0:8002
+    # command: python manage.py --bind 0.0.0.0:8000
+    ports:
+      - 8002:8002
+
+    volumes:
+      - .:/backend
+
+  nginx:
+    container_name: abc-nginx-server
+    image: nginx
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./staticfiles:/static
+      - ./media:/media
+    depends_on:
+      - web
