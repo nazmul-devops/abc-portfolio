@@ -10,6 +10,7 @@ urlpatterns = [
     # path('', views.frontend_html_view, name='frontend_html_view'),
     path("admin/", admin.site.urls),
     path("api/", include('post.urls')),
+    path("api/user/", include('user_profile.urls')),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
